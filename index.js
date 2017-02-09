@@ -7,10 +7,10 @@ var debug = require('debug')('daili')
 var winston = require('winston')
 var keenio = require('keen.io')
 
-var PingProxy = require('ping-proxy')
+var ProxyVerifier = require('proxy-verifier')
 var Evilscan = require('evilscan')
 var Scanner = new Evilscan({
-  target: '127.0.0.1/20',
+  target: '218.56.132.1/20',
   port: '8080',
   status: 'TROU',
   banner: true
@@ -18,12 +18,19 @@ var Scanner = new Evilscan({
 
 Scanner.on('result', function (data) {
   if (data.status.indexOf('open') !== -1) {
-    PingProxy({
-      proxyHost: data.ip,
-      proxyPort: 8080
-    }, function (error, options, statusCode) {
-      if (error) console.log('Error:', error)
-      console.log(options, statusCode)
+    ProxyVerifier.testAll({
+      ipAddress: data.ip,
+      port: data.port,
+      protocols: ['http', 'https']
+    }, function (error, result) {
+      if (error) console.log(error)
+      else {
+        Object.keys(result.protocols).forEach(function (protocol) {
+          if (result.protocols[protocol].ok === true) {
+            console.log(result)
+          }
+        })
+      }
     })
   }
 })
